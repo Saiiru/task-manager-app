@@ -4,6 +4,7 @@ pipeline {
     environment {
         DATABASE_URL = credentials('DATABASE_URL')
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
+        GITHUB_TOKEN = credentials('github-token')
     }
 
     stages {
@@ -11,9 +12,9 @@ pipeline {
             steps {
                 script {
                     if (env.BRANCH_NAME == 'dev') {
-                        git branch: 'dev', url: 'https://github.com/saiiru/task-manager-app.git'
+                        git branch: 'dev', url: 'https://github.com/saiiru/task-manager-app.git', credentialsId: 'github-token'
                     } else {
-                        git branch: 'main', url: 'https://github.com/sairu/task-manager-app.git'
+                        git branch: 'main', url: 'https://github.com/saiiru/task-manager-app.git', credentialsId: 'github-token'
                     }
                 }
             }
