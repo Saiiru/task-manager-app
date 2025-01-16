@@ -24,7 +24,7 @@ pipeline {
             steps {
                 script {
                     sh 'docker buildx create --use'
-                    sh 'docker buildx build -t sairu/task-manager-backend:latest .'
+                    sh 'docker buildx build -t saiiru/task-manager-backend:latest --push .'
                 }
             }
         }
@@ -32,7 +32,7 @@ pipeline {
         stage('Run Tests') {
             steps {
                 script {
-                    docker.image('sairu/task-manager-backend:latest').inside {
+                    docker.image('saiiru/task-manager-backend:latest').inside {
                         sh 'go test ./...'
                     }
                 }
@@ -58,9 +58,9 @@ pipeline {
             }
             steps {
                 script {
-                    kubectl.apply('-f ci-cd/kubernetes/secret.yaml')
-                    kubectl.apply('-f ci-cd/kubernetes/deployment.yaml')
-                    kubectl.apply('-f ci-cd/kubernetes/service.yaml')
+                    sh 'kubectl apply -f ci-cd/kubernetes/secret.yaml'
+                    sh 'kubectl apply -f ci-cd/kubernetes/deployment.yaml'
+                    sh 'kubectl apply -f ci-cd/kubernetes/service.yaml'
                 }
             }
         }
@@ -72,11 +72,11 @@ pipeline {
             steps {
                 script {
                     docker.withRegistry('https://index.docker.io/v1/', DOCKERHUB_CREDENTIALS) {
-                        sh 'docker buildx build -t sairu/task-manager-backend:latest --push .'
+                        sh 'docker buildx build -t saiiru/task-manager-backend:latest --push .'
                     }
-                    kubectl.apply('-f ci-cd/kubernetes/secret.yaml')
-                    kubectl.apply('-f ci-cd/kubernetes/deployment.yaml')
-                    kubectl.apply('-f ci-cd/kubernetes/service.yaml')
+                    sh 'kubectl apply -f ci-cd/kubernetes/secret.yaml'
+                    sh 'kubectl apply -f ci-cd/kubernetes/deployment.yaml'
+                    sh 'kubectl apply -f ci-cd/kubernetes/service.yaml'
                 }
             }
         }
