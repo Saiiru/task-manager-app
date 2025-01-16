@@ -10,14 +10,11 @@ RUN go mod download
 # Copy the entire backend source code
 COPY backend/ ./
 
-# Build the Go application
-RUN go build -o task-manager-app ./cmd/main.go
-
-# Test stage
-FROM builder AS tester
-
 # Run tests
 RUN go test ./...
+
+# Build the Go application
+RUN go build -o task-manager-app ./cmd/main.go
 
 # Final image
 FROM alpine:latest
