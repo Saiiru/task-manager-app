@@ -11,11 +11,8 @@ pipeline {
         stage('Checkout') {
             steps {
                 script {
-                    if (env.BRANCH_NAME == 'dev') {
-                        git branch: 'dev', url: 'https://github.com/saiiru/task-manager-app.git', credentialsId: 'github-token'
-                    } else {
-                        git branch: 'main', url: 'https://github.com/saiiru/task-manager-app.git', credentialsId: 'github-token'
-                    }
+                    def branch = env.BRANCH_NAME == 'dev' ? 'dev' : 'main'
+                    git branch: branch, url: 'https://github.com/saiiru/task-manager-app.git', credentialsId: 'github-token'
                 }
             }
         }
@@ -34,7 +31,7 @@ pipeline {
         stage('Run Tests') {
             steps {
                 script {
-                    docker.image('saiiru/task-manager-backend:latest').inside {
+                    docker.image('saiiru/task-manager-backend:latest').inside("-e DATABASE_URL=${env.DATABASE_URL}") {
                         sh 'go test ./...'
                     }
                 }
@@ -60,7 +57,6 @@ pipeline {
             }
             steps {
                 script {
-                    // Apply Kubernetes resources for Dev environment
                     sh 'kubectl apply -f ci-cd/kubernetes/secret.yaml'
                     sh 'kubectl apply -f ci-cd/kubernetes/deployment-dev.yaml'
                     sh 'kubectl apply -f ci-cd/kubernetes/service-dev.yaml'
@@ -74,7 +70,6 @@ pipeline {
             }
             steps {
                 script {
-                    // Push to Docker Hub and apply production Kubernetes resources
                     docker.withRegistry('https://index.docker.io/v1/', 'dockerhub-credentials') {
                         sh 'docker buildx build --platform linux/amd64 -t saiiru/task-manager-backend:latest --push .'
                     }

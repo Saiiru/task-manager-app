@@ -24,5 +24,5 @@ COPY --from=builder /app/task-manager-app .
 # Expose the port the app will run on
 EXPOSE 8080
 
-# Command to run the application, with environment variables passed
+# Command to run the application
 CMD ["./task-manager-app"]

@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: your-docker-username/task-manager-backend:latest
+          image: saiiru/task-manager-backend:latest
           ports:
             - containerPort: 8080
           resources:

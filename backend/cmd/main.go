@@ -10,16 +10,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
-	"github.com/joho/godotenv"
 )
 
 func main() {
-	// Carregar variáveis de ambiente do arquivo .env
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
-
 	// Get DATABASE_URL environment variable
 	databaseURL := os.Getenv("DATABASE_URL")
 	if databaseURL == "" {
