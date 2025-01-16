@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"task-manager-app/backend/internal/tasks/application"
 	"task-manager-app/backend/internal/tasks/domain"
@@ -15,9 +16,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var db *gorm.DB
+
 func setupRouter() *gin.Engine {
 	// Use an in-memory SQLite database for testing
-	db, _ := gorm.Open("sqlite3", ":memory:")
+	db, _ = gorm.Open("sqlite3", ":memory:")
 	db.AutoMigrate(&domain.Task{})
 
 	taskRepo := infrastructure.NewTaskRepository(db)
@@ -72,4 +75,15 @@ func TestCreateTask(t *testing.T) {
 
 	assert.Equal(t, 201, w.Code)
 	assert.Contains(t, w.Body.String(), "Test Task")
+}
+
+func TestMain(m *testing.M) {
+	// Run tests
+	code := m.Run()
+
+	// Close the database connection
+	db.Close()
+
+	// Exit with the test code
+	os.Exit(code)
 }
