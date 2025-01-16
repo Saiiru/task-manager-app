@@ -1,0 +1,54 @@
+pipeline {
+    agent any
+
+    environment {
+        DATABASE_URL = credentials('DATABASE_URL')
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git 'https://github.com/saiiru/task-manager-app.git'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    docker.build('task-manager-backend:latest')
+                }
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                script {
+                    docker.image('task-manager-backend:latest').inside {
+                        sh 'go test ./...'
+                    }
+                }
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    docker.withRegistry('https://index.docker.io/v1/', DOCKERHUB_CREDENTIALS) {
+                        docker.image('task-manager-backend:latest').push('latest')
+                    }
+                }
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                script {
+                    kubectl.apply('-f ci-cd/kubernetes/deployment.yaml')
+                    kubectl.apply('-f ci-cd/kubernetes/service.yaml')
+                    kubectl.apply('-f ci-cd/kubernetes/configmap.yaml')
+                }
+            }
+        }
+    }
+}
