@@ -13,6 +13,12 @@ COPY backend/ ./
 # Build the Go application
 RUN go build -o task-manager-app ./cmd/main.go
 
+# Test stage
+FROM builder AS tester
+
+# Run tests
+RUN go test ./...
+
 # Final image
 FROM alpine:latest
 
