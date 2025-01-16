@@ -16,6 +16,7 @@ import (
 )
 
 func setupRouter() *gin.Engine {
+	// Use an in-memory SQLite database for testing
 	db, _ := gorm.Open("sqlite3", ":memory:")
 	db.AutoMigrate(&domain.Task{})
 
