@@ -1,63 +1,53 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
-	"task-manager-app/backend/internal/tasks/application"
-	"task-manager-app/backend/internal/tasks/domain"
-	"task-manager-app/backend/internal/tasks/infrastructure"
+	"task-manager-app/backend/internal/application"
+	"task-manager-app/backend/internal/infrastructure"
+	"task-manager-app/backend/internal/interfaces"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/postgres"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 func main() {
-	// Get DATABASE_URL environment variable
-	databaseURL := os.Getenv("DATABASE_URL")
-	if databaseURL == "" {
-		log.Fatal("DATABASE_URL environment variable is not set.")
-	}
+	// Configuração do banco de dados
+	dbUser := os.Getenv("POSTGRES_USER")
+	dbPassword := os.Getenv("POSTGRES_PASSWORD")
+	dbName := os.Getenv("POSTGRES_DB")
+	dbHost := os.Getenv("DB_HOST")
+	dbPort := os.Getenv("DB_PORT")
 
-	// Connect to PostgreSQL database
-	db, err := gorm.Open("postgres", databaseURL)
+	// Conexão com o PostgreSQL
+	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		dbHost, dbPort, dbUser, dbPassword, dbName)
+
+	// Conectando ao banco de dados
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		log.Fatal("Failed to connect to database:", err)
+		log.Fatalf("Failed to connect to database: %v", err)
 	}
-	defer db.Close()
 
-	// Auto migrate the database
-	db.AutoMigrate(&domain.Task{})
+	// Criar as tabelas
+	if err := db.AutoMigrate(&infrastructure.Task{}); err != nil {
+		log.Fatalf("Failed to migrate database: %v", err)
+	}
 
-	// Initialize repository and service
+	// Inicializar WebSocket
+	interfaces.SetupWebSocket()
+
+	// Configurar GraphQL
+	interfaces.SetupGraphQL()
+
+	// Configurar REST API
+	router := gin.Default()
 	taskRepo := infrastructure.NewTaskRepository(db)
 	taskService := application.NewTaskService(taskRepo)
+	interfaces.NewTaskHandler(router, taskService)
 
-	// Set up the router
-	r := gin.Default()
-
-	r.GET("/tasks", func(c *gin.Context) {
-		tasks, err := taskService.GetAllTasks()
-		if err != nil {
-			c.JSON(500, gin.H{"error": err.Error()})
-			return
-		}
-		c.JSON(200, tasks)
-	})
-
-	r.POST("/tasks", func(c *gin.Context) {
-		var task domain.Task
-		if err := c.ShouldBindJSON(&task); err != nil {
-			c.JSON(400, gin.H{"error": err.Error()})
-			return
-		}
-		createdTask, err := taskService.CreateTask(task.Name)
-		if err != nil {
-			c.JSON(500, gin.H{"error": err.Error()})
-			return
-		}
-		c.JSON(201, createdTask)
-	})
-
-	r.Run()
+	// Iniciar servidor
+	router.Run(":8080")
 }
