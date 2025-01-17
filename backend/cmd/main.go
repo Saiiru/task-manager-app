@@ -1,53 +1,27 @@
 package main
 
 import (
-	"fmt"
 	"log"
-	"os"
-	"task-manager-app/backend/internal/application"
-	"task-manager-app/backend/internal/infrastructure"
-	"task-manager-app/backend/internal/interfaces"
-
-	"github.com/gin-gonic/gin"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
+	"task-manager-app/backend/internal/app"
+	"task-manager-app/backend/internal/config"
 )
 
 func main() {
-	// Configuração do banco de dados
-	dbUser := os.Getenv("POSTGRES_USER")
-	dbPassword := os.Getenv("POSTGRES_PASSWORD")
-	dbName := os.Getenv("POSTGRES_DB")
-	dbHost := os.Getenv("DB_HOST")
-	dbPort := os.Getenv("DB_PORT")
-
-	// Conexão com o PostgreSQL
-	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		dbHost, dbPort, dbUser, dbPassword, dbName)
-
-	// Conectando ao banco de dados
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	// Load the configuration
+	cfg, err := config.Load()
 	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
+		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	// Criar as tabelas
-	if err := db.AutoMigrate(&infrastructure.Task{}); err != nil {
-		log.Fatalf("Failed to migrate database: %v", err)
+	// Initialize the application components (router, handlers, etc.)
+	router, err := app.InitializeApp(cfg, false)
+	if err != nil {
+		log.Fatalf("Error initializing application: %v", err)
 	}
 
-	// Inicializar WebSocket
-	interfaces.SetupWebSocket()
-
-	// Configurar GraphQL
-	interfaces.SetupGraphQL()
-
-	// Configurar REST API
-	router := gin.Default()
-	taskRepo := infrastructure.NewTaskRepository(db)
-	taskService := application.NewTaskService(taskRepo)
-	interfaces.NewTaskHandler(router, taskService)
-
-	// Iniciar servidor
-	router.Run(":8080")
+	// Run the server
+	serverAddr := cfg.Server.Host + ":" + cfg.Server.Port
+	if err := router.Run(serverAddr); err != nil {
+		log.Fatalf("Error running the server: %v", err)
+	}
 }
