@@ -2,10 +2,8 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = 'saiiru/task-manager-backend:latest'
-        DOCKER_REGISTRY = 'saiiru'
         KUBE_CONFIG = credentials('kubeconfig-credentials')  // Credenciais Kubernetes
-        GITHUB_TOKEN = credentials('github-token')  // Token GitHub
+        GITHUB_TOKEN = credentials('github-token')          // Token GitHub
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')  // Credenciais Docker Hub
     }
 
@@ -30,7 +28,7 @@ pipeline {
             steps {
                 dir('backend') {
                     script {
-                        // Executando testes unitários e integração
+                        // Executando testes unitários e de integração
                         sh 'go test ./...'
                     }
                 }
@@ -42,7 +40,7 @@ pipeline {
                 dir('backend') {
                     script {
                         docker.withRegistry('https://index.docker.io/v1/', 'dockerhub-credentials') {
-                            sh 'docker build -t $DOCKER_REGISTRY/$DOCKER_IMAGE:latest .'
+                            sh 'docker build -t saiiru/task-manager-backend:latest .'  // Nome e tag fixos
                         }
                     }
                 }
@@ -54,7 +52,7 @@ pipeline {
                 dir('backend') {
                     script {
                         docker.withRegistry('https://index.docker.io/v1/', 'dockerhub-credentials') {
-                            sh 'docker push $DOCKER_REGISTRY/$DOCKER_IMAGE:latest'
+                            sh 'docker push saiiru/task-manager-backend:latest'  // Nome e tag fixos
                         }
                     }
                 }
@@ -66,15 +64,15 @@ pipeline {
                 script {
                     // Setando o contexto do Kubernetes usando as credenciais do kubeconfig
                     withCredentials([file(credentialsId: 'kubeconfig-credentials', variable: 'KUBECONFIG')]) {
-                        sh 'kubectl apply -f backend/k8s/namespace-dev.yaml'  // Namespace de desenvolvimento
-                        sh 'kubectl apply -f backend/k8s/secret.yaml'  // Secrets
-                        sh 'kubectl apply -f backend/k8s/config-map.yaml'  // ConfigMap
-                        sh 'kubectl apply -f backend/k8s/postgres-pvc.yaml'  // PVC
-                        sh 'kubectl apply -f backend/k8s/postgres-deployment.yaml'  // PostgreSQL Deployment
-                        sh 'kubectl apply -f backend/k8s/postgres-service.yaml'  // PostgreSQL Service
-                        sh 'kubectl apply -f backend/k8s/backend-deployment.yaml'  // Backend Deployment
-                        sh 'kubectl apply -f backend/k8s/backend-service.yaml'  // Backend Service
-                        sh 'kubectl apply -f backend/k8s/backend-ingress.yaml'  // Backend Ingress
+                        sh 'kubectl apply -f backend/k8s/namespace-dev.yaml'       // Namespace de desenvolvimento
+                        sh 'kubectl apply -f backend/k8s/secret.yaml'             // Secrets
+                        sh 'kubectl apply -f backend/k8s/config-map.yaml'         // ConfigMap
+                        sh 'kubectl apply -f backend/k8s/postgres-pvc.yaml'       // PVC
+                        sh 'kubectl apply -f backend/k8s/postgres-deployment.yaml'// PostgreSQL Deployment
+                        sh 'kubectl apply -f backend/k8s/postgres-service.yaml'   // PostgreSQL Service
+                        sh 'kubectl apply -f backend/k8s/backend-deployment.yaml' // Backend Deployment
+                        sh 'kubectl apply -f backend/k8s/backend-service.yaml'    // Backend Service
+                        sh 'kubectl apply -f backend/k8s/backend-ingress.yaml'    // Backend Ingress
                     }
                 }
             }
