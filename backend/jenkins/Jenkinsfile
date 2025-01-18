@@ -1,0 +1,83 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_IMAGE = 'saiiru/task-manager-backend:latest'
+        DOCKER_REGISTRY = 'saiiru'
+        KUBE_CONFIG = credentials('kubeconfig-credentials')  // Credenciais Kubernetes
+        GITHUB_TOKEN = credentials('github-token')  // Token GitHub
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')  // Credenciais Docker Hub
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        
+        stage('Install Dependencies') {
+            steps {
+                script {
+                    sh 'go mod tidy'  // Instalando dependências Go
+                }
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                script {
+                    // Executando testes unitários e integração
+                    sh 'go test ./...'
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub-credentials') {
+                        sh 'docker build -t $DOCKER_REGISTRY/$DOCKER_IMAGE:latest .'
+                    }
+                }
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub-credentials') {
+                        sh 'docker push $DOCKER_REGISTRY/$DOCKER_IMAGE:latest'
+                    }
+                }
+            }
+        }
+
+        stage('Deploy with Docker Compose') {
+            steps {
+                script {
+                    sh 'docker-compose -f backend/docker-compose.yml up -d'
+                }
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                script {
+                    // Setando o contexto do Kubernetes usando as credenciais do kubeconfig
+                    withCredentials([file(credentialsId: 'kubeconfig-credentials', variable: 'KUBECONFIG')]) {
+                        sh 'kubectl apply -f backend/k8s/namespace-dev.yaml'  // Namespace de desenvolvimento
+                        sh 'kubectl apply -f backend/k8s/secret.yaml'  // Secrets
+                        sh 'kubectl apply -f backend/k8s/config-map.yaml'  // ConfigMap
+                        sh 'kubectl apply -f backend/k8s/app-pod.yaml'  // Pod
+                    }
+                }
+            }
+        }
+    }
+    post {
+        always {
+            cleanWs()  // Limpando workspace após execução
+        }
+    }
+}

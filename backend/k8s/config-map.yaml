@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: dev # Ou 'prod'
+data:
+  SERVER_PORT: "8080"
+  SERVER_HOST: "0.0.0.0"
+  DB_NAME: "tasks_db"
+  DB_SSLMODE: "disable"
+  ENV: "development"
+  PGADMIN_PORT: "5050"

@@ -1,4 +1,3 @@
-# Build Stage: Compile the application
 FROM golang:1.23-alpine AS builder
 
 # Set the working directory inside the container
