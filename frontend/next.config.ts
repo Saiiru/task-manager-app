@@ -1,9 +1,20 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+import path from 'path';
+import type { NextConfig } from 'next';
+
+const nextConfig: NextConfig = {
   reactStrictMode: true,
-  images: {
-    domains: ["placecats.com"],
+  env: {
+    GRAPHQL_ENDPOINT:
+      process.env.GRAPHQL_ENDPOINT || 'http://localhost:8080/graphql',
   },
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': path.join(__dirname, 'src'),
+    };
+    return config;
+  },
+  swcMinify: true,
 };
 
-module.exports = nextConfig;
+export default nextConfig;
