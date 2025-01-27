@@ -1,80 +1,51 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
-	"golang.org/x/time/rate"
+	"github.com/golang-jwt/jwt/v4"
 )
 
-func AuthMiddleware(jwtSecret []byte) gin.HandlerFunc {
+func AuthMiddleware(secret []byte) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header missing"})
-			c.Abort()
+			c.Next()
 			return
 		}
 
-		parts := strings.Split(authHeader, " ")
-		if len(parts) != 2 || parts[0] != "Bearer" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid authorization format"})
-			c.Abort()
-			return
-		}
-
-		tokenString := parts[1]
-
+		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, jwt.ErrSignatureInvalid
+				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 			}
-			return jwtSecret, nil
+			return secret, nil
 		})
 
 		if err != nil {
-			if err == jwt.ErrSignatureInvalid {
-				c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token signature"})
-			} else {
-				c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+			return
+		}
+
+		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+			if exp, ok := claims["exp"].(float64); ok {
+				if time.Unix(int64(exp), 0).Before(time.Now()) {
+					c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "token expired"})
+					return
+				}
 			}
-			c.Abort()
+
+			userID := claims["user_id"].(string)
+			c.Set("user_id", userID)
+		} else {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 			return
 		}
 
-		claims, ok := token.Claims.(jwt.MapClaims)
-		if !ok || !token.Valid {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
-			c.Abort()
-			return
-		}
-
-		if exp, ok := claims["exp"].(float64); ok {
-			if time.Now().Unix() > int64(exp) {
-				c.JSON(http.StatusUnauthorized, gin.H{"error": "Token expired"})
-				c.Abort()
-				return
-			}
-		}
-
-		c.Set("user_id", claims["user_id"])
-		c.Set("email", claims["email"])
-
-		c.Next()
-	}
-}
-
-func RateLimiter() gin.HandlerFunc {
-	limiter := rate.NewLimiter(rate.Every(time.Second), 10)
-	return func(c *gin.Context) {
-		if !limiter.Allow() {
-			c.JSON(http.StatusTooManyRequests, gin.H{"error": "Too many requests"})
-			c.Abort()
-			return
-		}
 		c.Next()
 	}
 }
