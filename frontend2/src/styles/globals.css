@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .glass-effect {
+    @apply bg-glass-bg backdrop-blur-lg border border-glass-border;
+  }
+
+  .custom-input {
+    @apply w-full px-4 py-3 bg-glass-bg backdrop-blur-sm border border-glass-border rounded-lg
+    text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500
+    focus:border-transparent transition-all duration-200;
+  }
+
+  .custom-button {
+    @apply px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700
+    hover:to-blue-900 text-white font-semibold rounded-lg transition-all duration-200
+    focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+    disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .bg-gradient-custom {
+    @apply bg-gradient-to-r from-purple-400 via-pink-500 to-red-500;
+  }
+
+  .bg-gradient-task {
+    @apply bg-gradient-to-r from-green-400 via-blue-500 to-purple-500;
+  }
+}
+
+body {
+  @apply min-h-screen bg-gradient-custom text-white;
+  @apply bg-gray-900 text-white;
+}
+
+input,
+textarea,
+button {
+  @apply border-none outline-none bg-transparent;
+}
+
+.task-container {
+  @apply min-h-screen bg-gradient-task;
+}
+
+.card-glass {
+  @apply glass-effect rounded-xl shadow-xl;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+input[type="checkbox"] {
+  width: 1.5rem;
+  height: 1.5rem;
+  cursor: pointer;
+}
+
+.loader {
+  width: 48px;
+  height: 48px;
+  border: 5px solid #27ae60;
+  border-bottom-color: transparent;
+  border-radius: 50%;
+  display: inline-block;
+  box-sizing: border-box;
+  animation: rotation 1s linear infinite;
+}
+
+@keyframes rotation {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
