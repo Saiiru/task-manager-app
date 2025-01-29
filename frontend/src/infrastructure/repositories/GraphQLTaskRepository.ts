@@ -1,41 +1,80 @@
-// src/infrastructure/repositories/GraphQLTaskRepository.ts
-import { ApolloClient } from '@apollo/client';
-import { ITaskRepository } from '@/application/ports/TaskRepository';
-import { Task, CreateTaskDTO, UpdateTaskDTO } from '@/domain/entities/Task';
-import {
-  CREATE_TASK,
-  UPDATE_TASK,
-  DELETE_TASK,
-} from '@/infrastructure/graphql/mutations/tasks';
+import { gql } from "@apollo/client";
 
-export class GraphQLTaskRepository implements ITaskRepository {
-  constructor(private client: ApolloClient<any>) {}
-
-  async getTasks(): Promise<Task[]> {
-    const { data } = await this.client.query({ query: GET_TASKS });
-    return data.tasks;
+export const GET_TASKS = gql`
+  query GetTasks($filter: TaskFilter) {
+    tasks(filter: $filter) {
+      edges {
+        node {
+          id
+          title
+          description
+          userId
+          isCompleted
+          isImportant
+          date
+          createdAt
+          updatedAt
+        }
+      }
+      pageInfo {
+        hasNextPage
+        hasPreviousPage
+        totalCount
+      }
+    }
   }
+`;
 
-  async createTask(task: CreateTaskDTO): Promise<Task> {
-    const { data } = await this.client.mutate({
-      mutation: CREATE_TASK,
-      variables: { input: task },
-    });
-    return data.createTask;
+export const GET_TASK_BY_ID = gql`
+  query GetTask($id: ID!) {
+    task(id: $id) {
+      id
+      title
+      description
+      userId
+      isCompleted
+      isImportant
+      date
+      createdAt
+      updatedAt
+    }
   }
+`;
 
-  async updateTask(task: UpdateTaskDTO): Promise<Task> {
-    const { data } = await this.client.mutate({
-      mutation: UPDATE_TASK,
-      variables: { input: task },
-    });
-    return data.updateTask;
+export const CREATE_TASK = gql`
+  mutation CreateTask($input: NewTask!) {
+    createTask(input: $input) {
+      id
+      title
+      description
+      userId
+      isCompleted
+      isImportant
+      date
+      createdAt
+      updatedAt
+    }
   }
+`;
 
-  async deleteTask(id: string): Promise<void> {
-    await this.client.mutate({
-      mutation: DELETE_TASK,
-      variables: { id },
-    });
+export const UPDATE_TASK = gql`
+  mutation UpdateTask($input: UpdateTaskInput!) {
+    updateTask(input: $input) {
+      id
+      title
+      description
+      userId
+      isCompleted
+      isImportant
+      date
+      createdAt
+      updatedAt
+    }
   }
-}
+`;
+
+export const DELETE_TASK = gql`
+  mutation DeleteTask($id: ID!) {
+    deleteTask(id: $id)
+  }
+`;

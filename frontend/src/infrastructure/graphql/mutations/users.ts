@@ -1,37 +1,30 @@
-import { gql } from '@apollo/client';
+import { gql } from "@apollo/client";
 
-export const LOGIN_MUTATION = gql`
-  mutation Login($input: LoginInput!) {
+export const LOGIN_USER = gql`
+  mutation LoginUser($input: UserLogin!) {
     login(input: $input) {
-      token
       user {
         id
-        name
         email
+        name
+        lastName
+        createdAt
+        updatedAt
       }
+      token
     }
   }
 `;
 
-export const REGISTER_MUTATION = gql`
-  mutation Register($input: RegisterInput!) {
+export const REGISTER_USER = gql`
+  mutation RegisterUser($input: UserRegister!) {
     register(input: $input) {
-      token
-      user {
-        id
-        name
-        email
-      }
-    }
-  }
-`;
-
-export const GET_CURRENT_USER = gql`
-  query GetCurrentUser {
-    me {
       id
-      name
       email
+      name
+      lastName
+      createdAt
+      updatedAt
     }
   }
 `;

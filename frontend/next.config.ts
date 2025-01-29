@@ -1,20 +1,12 @@
-import path from 'path';
-import type { NextConfig } from 'next';
+import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  /* config options here */
   reactStrictMode: true,
   env: {
-    GRAPHQL_ENDPOINT:
-      process.env.GRAPHQL_ENDPOINT || 'http://localhost:8080/graphql',
+    NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+    NEXTAUTH_SECRET: process.env.AUTH_SECRET,
   },
-  webpack: (config) => {
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      '@': path.join(__dirname, 'src'),
-    };
-    return config;
-  },
-  swcMinify: true,
 };
 
 export default nextConfig;

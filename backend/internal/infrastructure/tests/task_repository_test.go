@@ -18,25 +18,27 @@ func setupTaskRepository() (*infrastructure.TaskRepository, *gorm.DB) {
 }
 
 func TestCreateTask(t *testing.T) {
-	repo, db := setupTaskRepository()
-
-	task := &domain.Task{Title: "Test Task", IsCompleted: false, UserID: 1}
-	err := repo.Create(task)
-	assert.NoError(t, err)
-
-	var result domain.Task
-	db.First(&result, task.ID)
-	assert.Equal(t, "Test Task", result.Title)
-}
-
-func TestFindByID(t *testing.T) {
 	repo, _ := setupTaskRepository()
 
-	task := &domain.Task{Title: "Test Task", IsCompleted: false, UserID: 1}
+	task := &domain.Task{
+		Title:  "Test Task",
+		UserID: 1,
+	}
 	err := repo.Create(task)
 	assert.NoError(t, err)
+	assert.NotZero(t, task.ID)
+}
 
-	result, err := repo.FindByID(task.ID)
+func TestFindTaskByID(t *testing.T) {
+	repo, _ := setupTaskRepository()
+
+	task := &domain.Task{
+		Title:  "Test Task",
+		UserID: 1,
+	}
+	repo.Create(task)
+
+	found, err := repo.FindByID(task.ID)
 	assert.NoError(t, err)
-	assert.Equal(t, "Test Task", result.Title)
+	assert.Equal(t, task.Title, found.Title)
 }

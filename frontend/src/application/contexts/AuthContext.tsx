@@ -1,77 +1,104 @@
-'use client';
-import { createContext, useContext, useState, useEffect } from 'react';
-import { User, AuthInput } from '@/domain/entities/User';
-import { GraphQLUserRepository } from '@/infrastructure/repositories/GraphQLUserRepository';
-import { useRouter } from 'next/router';
-import Cookies from 'js-cookie';
+"use client";
+import React, { createContext, useState, useContext, useEffect } from "react";
+import { Toaster } from "react-hot-toast";
+import { useSession, signIn, signOut } from "next-auth/react";
+import { AuthService } from "@/domain/services/AuthService";
 
-interface AuthContextType {
-  user: User | null;
-  loading: boolean;
-  signIn: (input: AuthInput) => Promise<void>;
-  signOut: () => void;
-}
+const authService = new AuthService();
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext(null);
+const AuthUpdateContext = createContext(null);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
-  const authRepository = new GraphQLUserRepository();
+export const useAuthState = () => useContext(AuthContext);
+export const useAuthUpdate = () => useContext(AuthUpdateContext);
 
-  useEffect(() => {
-    const initAuth = async () => {
-      const token = Cookies.get('auth-token');
-      if (token) {
-        try {
-          const user = await authRepository.getCurrentUser();
-          setUser(user);
-        } catch {
-          Cookies.remove('auth-token');
-          router.push('/signin');
-        }
-      } else {
-        router.push('/signin');
-      }
-      setLoading(false);
-    };
+export const AuthProvider = ({ children }) => {
+  const { data: session } = useSession();
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
 
-    initAuth();
-  }, []);
+  const login = async (email: string, password: string) => {
+    setError(null);
+    setLoading(true);
+    const result = await signIn("credentials", {
+      redirect: false,
+      email,
+      password,
+    });
 
-  const signIn = async (input: AuthInput) => {
-    try {
-      const { token, user } = await authRepository.login(input);
-      Cookies.set('auth-token', token, {
-        expires: 7,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-      });
-      setUser(user);
-      router.push('/');
-    } catch (error) {
-      throw new Error('Authentication failed');
+    if (result?.error) {
+      setError(result.error);
     }
+    setLoading(false);
   };
 
-  const signOut = () => {
-    Cookies.remove('auth-token');
-    setUser(null);
-    router.push('/signin');
+  const register = async (
+    email: string,
+    password: string,
+    name: string,
+    lastName: string
+  ) => {
+    setError(null);
+    setLoading(true);
+    try {
+      await authService.registerUser({
+        email,
+        password,
+        name,
+        lastName,
+        avatar: "",
+      });
+    } catch (error) {
+      setError(error.message);
+    }
+    setLoading(false);
+  };
+
+  const logout = async () => {
+    await signOut();
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signOut }}>
-      {children}
+    <AuthContext.Provider
+      value={{
+        session,
+        error,
+        loading,
+        login,
+        register,
+        logout,
+      }}
+    >
+      <AuthUpdateContext.Provider value={{}}>
+        {children}
+      </AuthUpdateContext.Provider>
     </AuthContext.Provider>
   );
-}
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
-  }
-  return context;
 };
+
+const AuthContextProvider = ({ children }) => {
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    setTimeout(() => {
+      setIsReady(true);
+    }, 250);
+  }, []);
+
+  if (!isReady) {
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <span className="loader"></span>
+      </div>
+    );
+  }
+
+  return (
+    <AuthProvider>
+      <Toaster />
+      {children}
+    </AuthProvider>
+  );
+};
+
+export default AuthContextProvider;

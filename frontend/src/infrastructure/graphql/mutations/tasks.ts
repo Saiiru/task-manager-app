@@ -1,36 +1,34 @@
-import { gql } from '@apollo/client';
+import { gql } from "@apollo/client";
 
-export const CREATE_TASK_MUTATION = gql`
+export const CREATE_TASK = gql`
   mutation CreateTask($input: NewTask!) {
     createTask(input: $input) {
       id
       title
       description
-      date
+      userId
       isCompleted
-      isImportant
       createdAt
       updatedAt
     }
   }
 `;
 
-export const UPDATE_TASK_MUTATION = gql`
-  mutation UpdateTask($id: ID!, $input: UpdateTaskInput!) {
-    updateTask(id: $id, input: $input) {
+export const UPDATE_TASK = gql`
+  mutation UpdateTask($input: UpdateTask!) {
+    updateTask(input: $input) {
       id
       title
       description
-      date
+      userId
       isCompleted
-      isImportant
       createdAt
       updatedAt
     }
   }
 `;
 
-export const DELETE_TASK_MUTATION = gql`
+export const DELETE_TASK = gql`
   mutation DeleteTask($id: ID!) {
     deleteTask(id: $id)
   }

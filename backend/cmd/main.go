@@ -6,6 +6,7 @@ import (
 	"task-manager-app/backend/internal/config"
 	"task-manager-app/backend/internal/database"
 	"task-manager-app/backend/internal/infrastructure"
+	"task-manager-app/backend/internal/interfaces"
 	"task-manager-app/backend/internal/interfaces/graphql/generated"
 	resolvers "task-manager-app/backend/internal/interfaces/graphql/resolver"
 	"task-manager-app/backend/internal/middleware"
@@ -27,7 +28,7 @@ func graphqlHandler(resolver *resolvers.Resolver) gin.HandlerFunc {
 }
 
 func playgroundHandler() gin.HandlerFunc {
-	h := playground.Handler("GraphQL", "/query")
+	h := playground.Handler("GraphQL", "/api/v1/graphql")
 
 	return func(c *gin.Context) {
 		h.ServeHTTP(c.Writer, c.Request)
@@ -65,16 +66,41 @@ func main() {
 	taskService := application.NewTaskService(taskRepo)
 	userService := application.NewUserService(userRepo)
 
+	// Initialize GraphQL resolver
 	resolver := resolvers.NewResolver(taskService, userService)
+
+	// Initialize handlers
+	authHandler := interfaces.NewAuthHandler(userService, []byte(cfg.JWT.Secret))
+	userHandler := interfaces.NewUserHandler(userService)
+	taskHandler := interfaces.NewTaskHandler(taskService)
 
 	// Public routes
 	router.GET("/playground", playgroundHandler())
-	router.POST("/query", graphqlHandler(resolver)) // For GraphQL queries
+	router.POST("/api/v1/graphql", graphqlHandler(resolver)) // For GraphQL queries
+
+	// Auth routes
+	router.POST("/api/v1/register", authHandler.Register)
+	router.POST("/api/v1/login", authHandler.Login)
+	router.POST("/api/v1/refresh-token", authHandler.RefreshToken)
+	router.POST("/api/v1/logout", authHandler.Logout)
 
 	// Protected routes
-	protected := router.Group("/protected")
+	protected := router.Group("/api/v1/protected")
 	protected.Use(middleware.AuthMiddleware([]byte(cfg.JWT.Secret)))
-	protected.POST("/query", graphqlHandler(resolver)) // For authenticated operations
+	protected.POST("/graphql", graphqlHandler(resolver)) // For authenticated operations
+
+	// User routes
+	protected.GET("/users", userHandler.GetUsers)
+	protected.GET("/users/:id", userHandler.GetUserByID)
+	protected.PUT("/users/:id", userHandler.UpdateUser)
+	protected.DELETE("/users/:id", userHandler.DeleteUser)
+
+	// Task routes
+	protected.GET("/tasks", taskHandler.GetTasks)
+	protected.POST("/tasks", taskHandler.CreateTask)
+	protected.GET("/tasks/:id", taskHandler.GetTaskByID)
+	protected.PUT("/tasks/:id", taskHandler.UpdateTask)
+	protected.DELETE("/tasks/:id", taskHandler.DeleteTask)
 
 	log.Printf("Server running on http://%s:%s", cfg.Server.Host, cfg.Server.Port)
 	log.Printf("GraphQL playground available at http://%s:%s/playground", cfg.Server.Host, cfg.Server.Port)

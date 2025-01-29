@@ -55,12 +55,12 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": utils.TranslateError(err)})
 		return
 	}
-	token, err := h.service.Login(req.Email, req.Password)
+	user, token, err := h.service.Login(req.Email, req.Password)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"token": token})
+	c.JSON(http.StatusOK, gin.H{"token": token, "user": user})
 }
 
 func (h *AuthHandler) RefreshToken(c *gin.Context) {

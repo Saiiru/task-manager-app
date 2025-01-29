@@ -1,46 +1,66 @@
-// src/application/contexts/TaskContext.tsx
-import { createContext, useContext, useState } from 'react';
-import { Task, CreateTaskDTO, UpdateTaskDTO } from '@/domain/entities/Task';
-import { ITaskRepository } from '@/application/ports/TaskRepository';
+import React, { createContext, useState, useContext, useEffect } from "react";
+import { useTasks } from "@/hooks/useTasks";
+import toast from "react-hot-toast";
 
-interface TaskContextData {
-  tasks: Task[];
-  createTask: (task: CreateTaskDTO) => Promise<void>;
-  updateTask: (task: UpdateTaskDTO) => Promise<void>;
-  deleteTask: (id: string) => Promise<void>;
-}
+const TaskContext = createContext();
 
-const TaskContext = createContext<TaskContextData>({} as TaskContextData);
+export const TaskProvider = ({ children }) => {
+  const { tasks, loading, refetchTasks, createTask, updateTask, deleteTask } =
+    useTasks();
+  const [modal, setModal] = useState(false);
 
-export function TaskProvider({
-  children,
-  repository,
-}: {
-  children: React.ReactNode;
-  repository: ITaskRepository;
-}) {
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const openModal = () => setModal(true);
+  const closeModal = () => setModal(false);
 
-  async function createTask(task: CreateTaskDTO) {
-    const newTask = await repository.createTask(task);
-    setTasks((prev) => [...prev, newTask]);
-  }
+  const handleCreateTask = async (task) => {
+    try {
+      await createTask(task);
+      toast.success("Task created successfully");
+      refetchTasks();
+      closeModal();
+    } catch (error) {
+      toast.error("Error creating task");
+    }
+  };
 
-  async function updateTask(task: UpdateTaskDTO) {
-    const updatedTask = await repository.updateTask(task);
-    setTasks((prev) => prev.map((t) => (t.id === task.id ? updatedTask : t)));
-  }
+  const handleUpdateTask = async (task) => {
+    try {
+      await updateTask(task);
+      toast.success("Task updated successfully");
+      refetchTasks();
+    } catch (error) {
+      toast.error("Error updating task");
+    }
+  };
 
-  async function deleteTask(id: string) {
-    await repository.deleteTask(id);
-    setTasks((prev) => prev.filter((t) => t.id !== id));
-  }
+  const handleDeleteTask = async (id) => {
+    try {
+      await deleteTask(id);
+      toast.success("Task deleted successfully");
+      refetchTasks();
+    } catch (error) {
+      toast.error("Error deleting task");
+    }
+  };
 
   return (
-    <TaskContext.Provider value={{ tasks, createTask, updateTask, deleteTask }}>
+    <TaskContext.Provider
+      value={{
+        tasks,
+        modal,
+        isLoading: loading,
+        openModal,
+        closeModal,
+        handleCreateTask,
+        handleUpdateTask,
+        handleDeleteTask,
+      }}
+    >
       {children}
     </TaskContext.Provider>
   );
-}
+};
 
-export const useTask = () => useContext(TaskContext);
+export const useTaskContext = () => useContext(TaskContext);
+
+export default TaskProvider;

@@ -72,7 +72,7 @@ func TestLoginUser(t *testing.T) {
 	user := &domain.User{Email: "test@example.com", PasswordHash: hashedPassword}
 	repo.On("FindByEmail", "test@example.com").Return(user, nil)
 
-	token, err := service.Login("test@example.com", "password")
+	user, token, err := service.Login("test@example.com", "password")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, token)
 	repo.AssertExpectations(t)

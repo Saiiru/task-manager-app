@@ -1,6 +1,7 @@
 type Task {
   id: ID!
   title: String!
+  description: String! # Adicionando a descrição
   isCompleted: Boolean!
   userId: ID!
   createdAt: String!
@@ -45,12 +46,14 @@ input TaskFilter {
 
 input NewTask {
   title: String!
+  description: String! # Adicionando a descrição
   userId: ID!
 }
 
 input UpdateTask {
   id: ID!
   title: String
+  description: String # Adicionando a descrição
   isCompleted: Boolean
 }
 
@@ -59,6 +62,7 @@ input UserRegister {
   password: String!
   name: String!
   lastName: String!
+  avatar: String
 }
 
 input UserLogin {
@@ -70,6 +74,9 @@ type Query {
   tasks(filter: TaskFilter): TaskConnection!
   task(id: ID!): Task
   me: User!
+  user(id: ID!): User
+  userByEmail(email: String!): User
+  users: [User!]!
 }
 
 type Mutation {

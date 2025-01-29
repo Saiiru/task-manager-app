@@ -13,14 +13,8 @@ type UserHandler struct {
 	service *application.UserService
 }
 
-func NewUserHandler(router *gin.Engine, service *application.UserService) {
-	handler := &UserHandler{service: service}
-	router.POST("/register", handler.Register)
-	router.POST("/login", handler.Login)
-	router.GET("/users", handler.GetUsers)
-	router.GET("/users/:id", handler.GetUserByID)
-	router.PUT("/users/:id", handler.UpdateUser)
-	router.DELETE("/users/:id", handler.DeleteUser)
+func NewUserHandler(service *application.UserService) *UserHandler {
+	return &UserHandler{service: service}
 }
 
 // Register handles user registration
@@ -55,12 +49,12 @@ func (h *UserHandler) Login(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	token, err := h.service.Login(req.Email, req.Password)
+	user, token, err := h.service.Login(req.Email, req.Password)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"token": token})
+	c.JSON(http.StatusOK, gin.H{"token": token, "user": user})
 }
 
 // GetUsers handles fetching all users

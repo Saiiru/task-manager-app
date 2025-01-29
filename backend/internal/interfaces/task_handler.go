@@ -13,13 +13,8 @@ type TaskHandler struct {
 	service *application.TaskService
 }
 
-func NewTaskHandler(router *gin.Engine, service *application.TaskService) {
-	handler := &TaskHandler{service: service}
-	router.GET("/api/v1/tasks", handler.GetTasks)
-	router.POST("/api/v1/tasks", handler.CreateTask)
-	router.GET("/api/v1/tasks/:id", handler.GetTaskByID)
-	router.PUT("/api/v1/tasks/:id", handler.UpdateTask)
-	router.DELETE("/api/v1/tasks/:id", handler.DeleteTask)
+func NewTaskHandler(service *application.TaskService) *TaskHandler {
+	return &TaskHandler{service: service}
 }
 
 // GetTasks godoc
@@ -31,7 +26,12 @@ func NewTaskHandler(router *gin.Engine, service *application.TaskService) {
 // @Success 200 {array} domain.Task
 // @Router /tasks [get]
 func (h *TaskHandler) GetTasks(c *gin.Context) {
-	tasks, err := h.service.GetAllTasks()
+	filter := domain.TaskFilter{
+		Search: c.Query("search"),
+		Page:   1,
+		Limit:  10,
+	}
+	tasks, err := h.service.GetAllTasks(filter)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
