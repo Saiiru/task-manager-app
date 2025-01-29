@@ -78,7 +78,7 @@ func (h *TaskHandler) GetTaskByID(c *gin.Context) {
 	}
 	task, err := h.service.GetTaskByID(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
 		return
 	}
 	c.JSON(http.StatusOK, task)
@@ -132,5 +132,5 @@ func (h *TaskHandler) DeleteTask(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Task deleted successfully"})
+	c.Status(http.StatusNoContent)
 }

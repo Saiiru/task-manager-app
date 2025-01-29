@@ -36,6 +36,13 @@ type AuthResponse struct {
 	Token string `json:"token"`
 }
 
+type UserUpdate struct {
+	Email    string `json:"email" binding:"required,email"`
+	Name     string `json:"name" binding:"required"`
+	LastName string `json:"lastName" binding:"required"`
+	Avatar   string `json:"avatar"`
+}
+
 func (u *User) HashPassword(password string) error {
 	hashedPassword, err := utils.HashPassword(password)
 	if err != nil {

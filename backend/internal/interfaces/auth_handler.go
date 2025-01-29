@@ -36,7 +36,10 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 	user := &domain.User{
-		Email: req.Email,
+		Email:    req.Email,
+		Name:     req.Name,
+		LastName: req.LastName,
+		Avatar:   req.Avatar,
 	}
 	if err := user.HashPassword(req.Password); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -46,7 +49,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "User registered successfully"})
+	c.JSON(http.StatusCreated, gin.H{"message": "User registered successfully"})
 }
 
 func (h *AuthHandler) Login(c *gin.Context) {

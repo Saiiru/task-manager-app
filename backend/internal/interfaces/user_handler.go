@@ -29,7 +29,10 @@ func (h *UserHandler) Register(c *gin.Context) {
 		return
 	}
 	user := &domain.User{
-		Email: req.Email,
+		Email:    req.Email,
+		Name:     req.Name,
+		LastName: req.LastName,
+		Avatar:   req.Avatar,
 	}
 	if err := user.HashPassword(req.Password); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -39,7 +42,7 @@ func (h *UserHandler) Register(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "User registered successfully"})
+	c.JSON(http.StatusCreated, gin.H{"message": "User registered successfully"})
 }
 
 // Login handles user login
@@ -91,22 +94,17 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
 		return
 	}
-	var req domain.UserRegister
+	var req domain.User
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if err := req.Validate(); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
 	user := &domain.User{
-		ID:    userID,
-		Email: req.Email,
-	}
-	if err := user.HashPassword(req.Password); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+		ID:       userID,
+		Email:    req.Email,
+		Name:     req.Name,
+		LastName: req.LastName,
+		Avatar:   req.Avatar,
 	}
 	if err := h.service.UpdateUser(user); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -127,5 +125,5 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "User deleted successfully"})
+	c.Status(http.StatusNoContent)
 }
